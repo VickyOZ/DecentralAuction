@@ -247,10 +247,3 @@
   )
 )
 
-;; Transfer contract ownership (only by current owner)
-(define-public (transfer-ownership (new-owner principal))
-  (begin
-    (asserts! (is-eq tx-sender contract-owner) error-not-contract-owner)
-    (ok (var-set contract-owner new-owner))
-  )
-)

@@ -211,42 +211,7 @@
   )
 )
 
-;; Claim asset (for winning bidder)
-(define-public (claim-asset (auction-id uint))
-  (let ((auction (unwrap! (get-auction auction-id) error-auction-not-found)))
-    (begin
-      ;; Check auction has ended
-      (asserts! (>= block-height (get end-block auction)) error-auction-not-ended)
-      
-      ;; Check sender is highest bidder
-      (asserts! (is-eq (some tx-sender) (get highest-bidder auction)) error-not-highest-bidder)
-      
-      ;; Check asset not already claimed
-      (asserts! (not (get is-claimed auction)) error-asset-already-claimed)
-      
-      ;; Calculate fees
-      (let ((bid-amount (get highest-bid auction))
-            (platform-fee (calculate-platform-fee (get highest-bid auction)))
-            (seller-proceeds (calculate-seller-proceeds (get highest-bid auction))))
-        
-        ;; Update auction as claimed
-        (map-set auctions
-          { auction-id: auction-id }
-          (merge auction { is-claimed: true })
-        )
-        
-        ;; Handle payment to creator
-        (stx-transfer? seller-proceeds tx-sender (get creator auction))
-        
-        ;; Handle platform fee
-        (stx-transfer? platform-fee tx-sender contract-owner)
-        
-        (ok true)
-      )
-    )
-  )
-)
-
+;; Claim auction proceeds (only by highest bidder)
 ;; Cancel auction (only by creator and only if no bids)
 (define-public (cancel-auction (auction-id uint))
   (let ((auction (unwrap! (get-auction auction-id) error-auction-not-found)))
